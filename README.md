@@ -91,11 +91,18 @@ Each pixel is coloured by model prediction probability. Warmer = higher confiden
 Bare_Soil_Mapping/
 │
 ├── abstract/                        # Project abstract & figures
-│   ├── bare_soil_abstract.html      # Full abstract poster (HTML)
 │   ├── bare_soil_abstract.pdf       # Full abstract poster (PDF)
 │   ├── pipeline.png                 # End-to-end pipeline diagram
 │   ├── left_img.jpeg                # Sample result — S2 true colour composite
 │   └── right_img.jpeg               # Sample result — bare soil prediction map
+│
+├── AE_cropmask/                     # Agricultural/Crop Mask pipeline (Ag vs. Non-Ag)
+│   ├── merge.py                     # Fast GeoTIFF mosaic merger
+│   ├── train_from_csv.py            # Trains RF model from CSV and predicts full district mask
+│   ├── visualise.py                 # Visualizes district agricultural mask in matplotlib
+│   ├── visualise_with_png_export.py # Validates GeoTIFF data and exports visualized overlays
+│   ├── rf_model_from_csv.pkl        # Trained Random Forest crop mask model
+│   └── final.csv                    # Ground-truth cropland training dataset
 │
 ├── manual_data_collection/          # Step 0 — Ground-truth data collection on GEE
 │   ├── GEE_data_collection_tool.js  # Interactive GEE app to draw & export bare soil polygons
@@ -106,7 +113,7 @@ Bare_Soil_Mapping/
 │   ├── descriptive_stats.js         # GEE script: computes per-district spectral statistics
 │   ├── threshold_extraction.py      # Extracts NDVI/BSI thresholds from stats CSVs
 │   ├── s2_hybrid_download_final.js  # GEE script: exports monthly S2 composites + hybrid maps
-│   └── README.md                    # Detailed usage instructions for this pipeline
+│   └── pipeline_files_usage.md      # Detailed usage instructions for this pipeline
 │
 ├── rule_based_algo/                 # Earlier version of the rule-based pipeline (reference)
 │   ├── DESCRIPTIVE STATS.js
@@ -121,6 +128,15 @@ Bare_Soil_Mapping/
 │   ├── Temporal_Bare_Soil_Transformer.ipynb  # Transformer-based temporal model (experimental)
 │   └── xgb_bare_soil.joblib              # Trained XGBoost model (serialised)
 │
+├── website_demo/                    # Interactive web demo dashboard (Streamlit)
+│   ├── app.py                       # Streamlit-based web application map visualizer
+│   ├── requirements.txt             # Python packages required to run the demo app
+│   ├── process_data.py              # Preprocesses GeoTIFFs/Parquet datasets into PNG overlays
+│   ├── convert_tif_to_png.py        # Helper to convert Sentinel-2 TIF to PNG layers
+│   ├── export_tiff.py               # Exports 10-band bare soil GeoTIFF
+│   ├── export_type2_tiff.py         # Exports 10-band type-2 soil GeoTIFF
+│   └── bounds.json                  # Geographic bounding box coordinates for Jalandhar
+│
 └── GEE_BULK_RUNNER.js               # Utility: bulk-runs GEE export tasks
 ```
 
@@ -129,6 +145,7 @@ Bare_Soil_Mapping/
 ## Where to Start
 
 1. **Collect ground-truth data** → [`manual_data_collection/GEE_data_collection_tool.js`](./manual_data_collection/GEE_data_collection_tool.js)
-2. **Generate labelled hybrid maps** → follow the [`rule_based_algo_updated/README.md`](./rule_based_algo_updated/README.md)
+2. **Generate labelled hybrid maps** → follow the [`rule_based_algo_updated/pipeline_files_usage.md`](./rule_based_algo_updated/pipeline_files_usage.md)
 3. **Train or run the ML model** → see the notebooks in [`ml_bare_soil_pred/`](./ml_bare_soil_pred/)
-4. **View sample outputs & demos** → [SharePoint folder](https://plakshauniversity1-my.sharepoint.com/:f:/g/personal/saksham_bali_ug23_plaksha_edu_in/IgBvQ2gmcVkzRbEEJ_sY-wkMASPGwGyMXvQQKTApwd3DFrg?e=jZEle2)
+4. **Interact with the Streamlit demo** → run `streamlit run website_demo/app.py`
+5. **View sample outputs & demos** → [SharePoint folder](https://plakshauniversity1-my.sharepoint.com/:f:/g/personal/saksham_bali_ug23_plaksha_edu_in/IgBvQ2gmcVkzRbEEJ_sY-wkMASPGwGyMXvQQKTApwd3DFrg?e=jZEle2)

@@ -2,3 +2,10 @@
 .ipynb_checkpoints/
 __pycache__/
 *.pyc
+
+# Large data, models, and spatial files
+*.tif
+*.parquet
+*.pkl
+*.csv
+
