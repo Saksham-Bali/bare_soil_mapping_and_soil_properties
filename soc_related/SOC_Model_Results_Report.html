@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOC Estimation Model — Results Report</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      line-height: 1.75;
+      color: #1a1a1a;
+      background: #f7f6f3;
+      padding: 40px 20px 80px;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 60px 70px;
+    }
+
+    /* Header */
+    .report-title {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 12px;
+      margin-bottom: 6px;
+    }
+
+    .report-subtitle {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 36px;
+    }
+
+    /* Section headings */
+    h2 {
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.10em;
+      color: #333;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+      margin: 40px 0 16px;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 24px 0 8px;
+      color: #1a1a1a;
+    }
+
+    p {
+      margin-bottom: 14px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin: 18px 0 24px;
+    }
+
+    thead tr {
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+
+    thead th {
+      padding: 9px 14px;
+      text-align: left;
+      font-weight: normal;
+      letter-spacing: 0.05em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f5f4f1;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #ffffff;
+    }
+
+    tbody td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .best-row {
+      background: #e8f0e8 !important;
+      font-weight: bold;
+    }
+
+    .num {
+      text-align: right;
+    }
+
+    .neg {
+      color: #8b0000;
+    }
+
+    .pos {
+      color: #1a5e1a;
+    }
+
+    /* Code / file names */
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      background: #f0eeea;
+      border: 1px solid #ddd;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Definition list */
+    dl {
+      margin: 10px 0 18px;
+    }
+
+    dt {
+      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    dd {
+      margin-left: 24px;
+      color: #333;
+    }
+
+    /* Callout box */
+    .callout {
+      border-left: 3px solid #555;
+      background: #f5f4f1;
+      padding: 14px 18px;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    .callout.finding {
+      border-color: #2e6b2e;
+    }
+
+    .callout.caution {
+      border-color: #8b4000;
+    }
+
+    /* Ordered list */
+    ol,
+    ul {
+      margin: 10px 0 16px 24px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 60px;
+      border-top: 1px solid #ccc;
+      padding-top: 14px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <div class="report-title">Soil Organic Carbon (SOC) Estimation — Model Results Report</div>
+    <div class="report-subtitle">
+      Project: Bare Soil Mapping and SOC Estimation &nbsp;|&nbsp;
+      Data: Sentinel-2 October 2025, 40 Field Plots &nbsp;|&nbsp;
+    </div>
+
+
+    <!-- ======================================================== -->
+    <h2>1. Objective</h2>
+
+    <p>
+      This report documents the results of training and evaluating machine learning models
+      for predicting Soil Organic Carbon (SOC) percentage from Sentinel-2 multispectral imagery.
+      The core research question is whether adding Alpha Earth Embeddings (AEE) and a
+      bare soil detection signal to standard spectral band features improves SOC prediction accuracy.
+    </p>
+    <p>
+      Two modelling approaches were evaluated: a plot-level approach that reduces each field
+      plot to a single feature vector (following the baseline method), and a pixel-level approach
+      that treats each individual pixel as a training sample while preserving plot-level
+      validation integrity.
+    </p>
+
+
+    <!-- ======================================================== -->
+    <h2>2. Data Description</h2>
+
+    <dl>
+      <dt>Field plots</dt>
+      <dd>40 agricultural plots. Each plot has one ground-truth SOC measurement (SOC_pct), ranging from 0.13% to 1.01%.
+      </dd>
+
+      <dt>Imagery</dt>
+      <dd>Sentinel-2 (10 m resolution), October 2025 monthly median composite. Exported via Google Earth Engine as
+        pixel-level CSV tables.</dd>
+
+      <dt>Spectral bands (S2)</dt>
+      <dd>12 bands: B1, B2, B3, B4, B5, B6, B7, B8, B8A, B9, B11, B12.</dd>
+
+      <dt>Spectral indices (derived)</dt>
+      <dd>5 indices computed from S2 bands: BSI (Bare Soil Index), NDVI, NDWI, SWIR Ratio, and Brightness.</dd>
+
+      <dt>Alpha Earth Embeddings (AEE)</dt>
+      <dd>64-dimensional per-pixel embeddings (A00 to A63) generated by the Alpha Earth foundation model. These are
+        pixel-level features with small spatial variation within each plot.</dd>
+
+      <dt>Bare soil prediction</dt>
+      <dd>Per-pixel binary label (0 = not bare, 1 = bare soil) from a separately trained XGBoost bare-soil classifier.
+        Overall bare fraction across all plots: 19.2%.</dd>
+
+      <dt>Total pixels</dt>
+      <dd>1,619 pixels across 40 plots (4 to 112 pixels per plot, median approximately 40).</dd>
+    </dl>
+
+
+    <!-- ======================================================== -->
+    <h2>3. Feature Variants Evaluated</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Variant</th>
+          <th>Description</th>
+          <th class="num">No. of Features</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A</td>
+          <td>S2 spectral bands only (baseline, replicates teammate's model)</td>
+          <td class="num">12</td>
+        </tr>
+        <tr>
+          <td>B</td>
+          <td>S2 bands + AEE embeddings</td>
+          <td class="num">76</td>
+        </tr>
+        <tr>
+          <td>C</td>
+          <td>S2 bands + spectral indices + AEE embeddings</td>
+          <td class="num">81</td>
+        </tr>
+        <tr>
+          <td>D</td>
+          <td>S2 bands + spectral indices + AEE embeddings + bare soil prediction</td>
+          <td class="num">82</td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <!-- ======================================================== -->
+    <h2>4. Modelling Approaches</h2>
+
+    <h3>4.1 Plot-Level Approach (Baseline)</h3>
+    <p>
+      Each plot is reduced to a single row by computing the spatial median of all pixel values
+      across each feature dimension. This yields a dataset of 40 rows (one per plot) with
+      one SOC label per row. A Partial Least Squares Regression (PLSR) pipeline
+      (StandardScaler + PLSRegression) is trained, with the number of latent components
+      tuned by grid search over {1, 2, 3, 4, 5, 6, 8, 10}.
+    </p>
+    <p>
+      Validation uses strict Leave-One-Out Cross-Validation (LOO-CV) across all 40 plots.
+      This mirrors the approach used in the team's baseline model (<code>model_minimal.py</code>).
+    </p>
+
+    <h3>4.2 Pixel-Level Approach</h3>
+    <p>
+      All 1,619 pixels from all 40 plots are used as individual training samples. Each pixel
+      inherits the SOC label of its parent plot. To prevent data leakage, validation is still
+      conducted at the plot level: in each LOO fold, all pixels belonging to the held-out plot
+      are withheld from training. The model is then used to predict SOC for each withheld pixel,
+      and the mean of those pixel predictions constitutes the plot-level SOC estimate.
+    </p>
+    <p>
+      Three model types are evaluated: PLSR (for direct comparison with the baseline),
+      Ridge Regression (linear, regularised), and XGBoost (gradient-boosted trees, non-linear).
+      Inner hyperparameter tuning uses 5-fold cross-validation on the training plots.
+    </p>
+
+
+    <!-- ======================================================== -->
+    <h2>5. Results</h2>
+
+    <h3>5.1 Plot-Level Models (PLSR)</h3>
+    <p>
+      All LOO R-squared values are negative, meaning the model performs worse than a
+      naive constant predictor (mean SOC across plots). This is primarily a consequence
+      of having only 40 labelled observations.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Variant</th>
+          <th class="num">R2 (LOO)</th>
+          <th class="num">RMSE (% SOC)</th>
+          <th class="num">MAE (% SOC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A &mdash; S2 only</td>
+          <td class="num neg">-0.086</td>
+          <td class="num">0.2034</td>
+          <td class="num">0.1628</td>
+        </tr>
+        <tr>
+          <td>B &mdash; S2 + AEE</td>
+          <td class="num neg">-0.113</td>
+          <td class="num">0.2059</td>
+          <td class="num">0.1677</td>
+        </tr>
+        <tr>
+          <td>C &mdash; S2 + Indices + AEE</td>
+          <td class="num neg">-0.054</td>
+          <td class="num">0.2004</td>
+          <td class="num">0.1631</td>
+        </tr>
+        <tr>
+          <td>D &mdash; S2 + Indices + AEE + Bare</td>
+          <td class="num neg">-0.055</td>
+          <td class="num">0.2005</td>
+          <td class="num">0.1627</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.2 Pixel-Level Models (Full Comparison)</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Variant</th>
+          <th>Model</th>
+          <th class="num">R2 (LOO)</th>
+          <th class="num">RMSE (% SOC)</th>
+          <th class="num">MAE (% SOC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="best-row">
+          <td>D &mdash; S2 + Indices + AEE + Bare</td>
+          <td>XGBoost</td>
+          <td class="num pos">+0.143</td>
+          <td class="num">0.1807</td>
+          <td class="num">0.1429</td>
+        </tr>
+        <tr>
+          <td>C &mdash; S2 + Indices + AEE</td>
+          <td>XGBoost</td>
+          <td class="num pos">+0.142</td>
+          <td class="num">0.1808</td>
+          <td class="num">0.1433</td>
+        </tr>
+        <tr>
+          <td>B &mdash; S2 + AEE</td>
+          <td>XGBoost</td>
+          <td class="num pos">+0.122</td>
+          <td class="num">0.1828</td>
+          <td class="num">0.1442</td>
+        </tr>
+        <tr>
+          <td>A &mdash; S2 only</td>
+          <td>Ridge</td>
+          <td class="num pos">+0.056</td>
+          <td class="num">0.1896</td>
+          <td class="num">0.1566</td>
+        </tr>
+        <tr>
+          <td>A &mdash; S2 only</td>
+          <td>PLSR</td>
+          <td class="num pos">+0.048</td>
+          <td class="num">0.1904</td>
+          <td class="num">0.1572</td>
+        </tr>
+        <tr>
+          <td>A &mdash; S2 only</td>
+          <td>XGBoost</td>
+          <td class="num neg">-0.254</td>
+          <td class="num">0.2186</td>
+          <td class="num">0.1699</td>
+        </tr>
+        <tr>
+          <td>C &mdash; S2 + Indices + AEE</td>
+          <td>Ridge</td>
+          <td class="num neg">-0.304</td>
+          <td class="num">0.2229</td>
+          <td class="num">0.1761</td>
+        </tr>
+        <tr>
+          <td>D &mdash; S2 + Indices + AEE + Bare</td>
+          <td>Ridge</td>
+          <td class="num neg">-0.308</td>
+          <td class="num">0.2232</td>
+          <td class="num">0.1764</td>
+        </tr>
+        <tr>
+          <td>B &mdash; S2 + AEE</td>
+          <td>Ridge</td>
+          <td class="num neg">-0.331</td>
+          <td class="num">0.2251</td>
+          <td class="num">0.1781</td>
+        </tr>
+        <tr>
+          <td>D &mdash; S2 + Indices + AEE + Bare</td>
+          <td>PLSR</td>
+          <td class="num neg">-0.504</td>
+          <td class="num">0.2394</td>
+          <td class="num">0.1907</td>
+        </tr>
+        <tr>
+          <td>C &mdash; S2 + Indices + AEE</td>
+          <td>PLSR</td>
+          <td class="num neg">-0.543</td>
+          <td class="num">0.2424</td>
+          <td class="num">0.1930</td>
+        </tr>
+        <tr>
+          <td>B &mdash; S2 + AEE</td>
+          <td>PLSR</td>
+          <td class="num neg">-0.547</td>
+          <td class="num">0.2428</td>
+          <td class="num">0.1917</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout finding">
+      Best configuration: Variant D (S2 + Spectral Indices + AEE + Bare Soil Prediction)
+      trained with XGBoost at the pixel level. LOO R2 = +0.143, RMSE = 0.181% SOC.
+      Final model saved to <code>pixel_soc_best_model.joblib</code>.
+    </div>
+
+
+    <!-- ======================================================== -->
+    <h2>6. Interpretation</h2>
+
+    <h3>6.1 Pixel-level training outperforms plot-level</h3>
+    <p>
+      The shift from 40 plot-level rows to 1,619 pixel-level rows moves all best-case results
+      from negative to positive R-squared territory. Even though every pixel within a plot
+      carries the same SOC label (the ground-truth measurement), the spatial variation in
+      spectral and embedding features within a plot provides additional signal that the
+      model can learn from. This confirms that the spatial median reduction in the
+      plot-level approach discards useful intra-plot variability.
+    </p>
+
+    <h3>6.2 AEE features only help with non-linear models</h3>
+    <p>
+      Adding AEE embeddings to S2 bands harms PLSR and Ridge performance substantially
+      (R2 drops from approximately -0.05 to -0.55 for PLSR at pixel level). With 76 to 82
+      features and only ~1,580 training pixels spanning just 39 unique SOC labels, linear
+      methods cannot identify a meaningful regression direction through the high-dimensional
+      feature space without overfitting. XGBoost, which builds shallow trees and regularises
+      implicitly through subsampling, is able to exploit the AEE dimensions productively,
+      improving R2 from +0.056 (S2 only, Ridge) to +0.143 (full feature set, XGB).
+    </p>
+
+    <h3>6.3 Bare soil prediction contributes marginally</h3>
+    <p>
+      The difference between Variant C and Variant D under XGBoost is R2 = 0.001
+      (0.142 vs 0.143). The bare soil signal adds almost no independent information at
+      this scale because it is already partially captured by NDVI and the Bare Soil Index
+      included in the spectral indices block. The bare soil classifier may provide more
+      discriminative power if SOC is modelled separately for bare and vegetated pixels,
+      rather than as a single unified model.
+    </p>
+
+    <h3>6.4 The overall R-squared remains low</h3>
+    <p>
+      An LOO R-squared of +0.143 means the best model explains approximately 14% of the
+      variance in plot-level SOC. This is the primary result to communicate to stakeholders:
+      the model is directionally correct but not yet reliable enough for operational use.
+      The constraint is not the modelling method but the number of unique ground-truth
+      SOC measurements. With only 40 labelled plots, even the best model has limited
+      ability to generalise.
+    </p>
+
+    <div class="callout caution">
+      The LOO predictions are computed from pixels trained on the remaining 39 plots, so
+      there is no data leakage between the held-out plot and the training set. However,
+      the 40-plot dataset is small enough that single outlier plots can move aggregate
+      metrics by several percentage points. Metrics should be interpreted with this
+      uncertainty in mind.
+    </div>
+
+
+    <!-- ======================================================== -->
+    <h2>7. Saved Outputs</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>soc_model_aee.joblib</code></td>
+          <td>Plot-level PLSR model bundle, best variant C, fitted on all 40 plots</td>
+        </tr>
+        <tr>
+          <td><code>soc_predictions_comparison.csv</code></td>
+          <td>Per-plot LOO predictions for all 4 variants under the plot-level PLSR approach</td>
+        </tr>
+        <tr>
+          <td><code>pixel_soc_best_model.joblib</code></td>
+          <td>Pixel-level XGBoost model bundle (Variant D), fitted on all 1,619 pixels</td>
+        </tr>
+        <tr>
+          <td><code>pixel_soc_loo_predictions.csv</code></td>
+          <td>Per-plot LOO predictions for all 12 variant-model combinations under the pixel-level approach</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Each <code>.joblib</code> bundle stores the fitted model object alongside metadata
+      including the feature column list, variant name, model type, and LOO R-squared,
+      so the exact inference setup can be reproduced without referencing the training script.
+    </p>
+
+
+    <!-- ======================================================== -->
+    <h2>8. Next Steps</h2>
+
+    <h3>Priority 1 &mdash; Expand the ground-truth dataset</h3>
+    <p>
+      This is the single highest-leverage action. Doubling the number of labelled plots from
+      40 to 80 would be expected to substantially improve LOO R-squared. Literature on
+      soil spectroscopy with Sentinel-2 typically requires a minimum of 80 to 150 calibration
+      samples before PLSR-class models become reliable. Collecting SOC measurements for
+      additional plots in the study area, or integrating publicly available soil survey data
+      (e.g. from ICAR, NBSS&LUP, or the ISRIC World Soil Database), should be the
+      immediate focus.
+    </p>
+
+    <h3>Priority 2 &mdash; Stratify bare and non-bare pixels</h3>
+    <p>
+      SOC measured from Sentinel-2 is only physically meaningful when the soil surface is
+      exposed. Pixels classified as vegetated (bare_pred = 0) are contributing noise to the
+      regression because the reflectance signal is dominated by vegetation, not soil.
+      Training separate models for bare pixels (bare_pred = 1) and applying the model
+      only to bare pixels during inference is expected to improve signal quality noticeably,
+      particularly for plots with mixed bare and vegetated cover.
+    </p>
+
+    <h3>Priority 3 &mdash; Temporal stack instead of single-month composite</h3>
+    <p>
+      The current dataset uses only the October 2025 monthly median. The old dataset
+      contains 12 monthly composites per plot. Stacking multiple months as additional
+      features (e.g. using bands from March, October, and December, which correspond to
+      dry, post-harvest, and post-Rabi sowing periods respectively) could expose seasonal
+      SOC-reflectance patterns that a single-month snapshot misses. The existing
+      <code>s2_old</code> parquet files already contain this temporal data for all 40 plots.
+    </p>
+
+    <h3>Priority 4 &mdash; Hyperparameter tuning with a larger search space</h3>
+    <p>
+      The current XGBoost grid search covers a modest parameter space to keep runtime
+      manageable on 40 LOO folds. Once the dataset is larger, a broader search
+      (including <code>min_child_weight</code>, <code>gamma</code>, and
+      <code>reg_lambda</code>) or a Bayesian optimisation approach would be appropriate.
+    </p>
+
+    <h3>Priority 5 &mdash; Confidence intervals and uncertainty quantification</h3>
+    <p>
+      Operational SOC maps should report prediction uncertainty alongside point estimates.
+      This can be achieved using XGBoost quantile regression or by training an ensemble
+      of models with bootstrapped training sets. Uncertainty is especially important for
+      plots with few valid pixels (some plots have as few as 4 pixels), where the
+      spatial median or mean is statistically unreliable.
+    </p>
+
+
+    <!-- ======================================================== -->
+    <h2>9. Reproducibility</h2>
+
+    <p>All code is version-controlled and located in the <code>soc_related/</code> directory.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Script</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>run_bare_soil_predictions.py</code></td>
+          <td>Runs XGBoost bare soil classifier on all 40 S2 CSV files; output goes to <code>s2_bare/</code></td>
+        </tr>
+        <tr>
+          <td><code>soc_model_aee.py</code></td>
+          <td>Plot-level PLSR training for all 4 feature variants</td>
+        </tr>
+        <tr>
+          <td><code>pixel_level_soc_model.py</code></td>
+          <td>Pixel-level training (PLSR, Ridge, XGBoost) for all 4 feature variants with plot-level LOO-CV</td>
+        </tr>
+        <tr>
+          <td><code>compare_data.py</code></td>
+          <td>Validates alignment between old parquet exports and new CSV exports</td>
+        </tr>
+        <tr>
+          <td><code>old_oct_analysis.py</code></td>
+          <td>Applies dropna to old October parquets, runs bare soil predictions on them for cross-validation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Required Python packages: <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>,
+      <code>xgboost</code>, <code>joblib</code>. The bare soil model additionally requires
+      the saved weights at <code>ml_bare_soil_pred/xgb_bare_soil.joblib</code>.
+    </p>
+
+
+    <div class="footer">
+      Bare Soil Mapping Project &mdash; Internal Technical Report &mdash; August 2025
+    </div>
+
+  </div>
+</body>
+
+</html>

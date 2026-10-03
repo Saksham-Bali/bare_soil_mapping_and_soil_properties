@@ -1,0 +1,4 @@
+Grouped 5-Fold Macro F1: 0.6150
+LODO Average Macro F1:   0.5048
+Generalization Gap:      0.1102
+District Predictability: 0.2780

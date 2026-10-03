@@ -1,0 +1,304 @@
+﻿--- Cell 3 ---
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+import joblib
+import gc
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (f1_score, classification_report,
+                             confusion_matrix, roc_auc_score)
+
+# ΓöÇΓöÇ Config ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+DATA_PATH  = '/content/drive/MyDrive/ILGC-V/combined_training_data.parquet'
+MODEL_PATH = '/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib'
+BAND_COLS  = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+SEED       = 42
+
+
+# ΓöÇΓöÇ 1. Load data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("Loading data...")
+df = pd.read_parquet(DATA_PATH)
+print(f"  Shape: {df.shape}")
+print(f"  Bare (1): {(df['target']==1).sum():,}  Crop (0): {(df['target']==0).sum():,}")
+
+
+# ΓöÇΓöÇ 2. Feature engineering ΓÇö spectral indices ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print("\nComputing spectral indices...")
+
+def add_indices(df):
+    B2  = df['B2'].values.astype(np.float32)
+    B3  = df['B3'].values.astype(np.float32)
+    B4  = df['B4'].values.astype(np.float32)
+    B8  = df['B8'].values.astype(np.float32)
+    B11 = df['B11'].values.astype(np.float32)
+    B12 = df['B12'].values.astype(np.float32)
+
+    eps = 1e-8  # avoid division by zero
+
+    # Bare Soil Index ΓÇö most important for this task
+    df['BSI']       = ((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2) + eps)
+
+    # Vegetation indices ΓÇö inverse signal of bare soil
+    df['NDVI']      = (B8 - B4)  / (B8  + B4  + eps)
+    df['NDWI']      = (B3 - B8)  / (B3  + B8  + eps)
+
+    # SWIR ratio ΓÇö sensitive to soil moisture and bare soil
+    df['SWIR_ratio'] = B11 / (B12 + eps)
+
+    # Brightness ΓÇö bare soil tends to be brighter
+    df['brightness'] = (B2 + B3 + B4 + B8) / 4.0
+
+    return df
+
+df = add_indices(df)
+gc.collect()
+
+FEATURE_COLS = BAND_COLS + ['BSI', 'NDVI', 'NDWI', 'SWIR_ratio', 'brightness']
+print(f"  Features: {len(FEATURE_COLS)}  ΓåÆ  {FEATURE_COLS}")
+
+
+# ΓöÇΓöÇ 3. Train / val split ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+--- Cell 4 ---
+# Test on a held-out district parquet that was NOT in training
+# e.g. use Amritsar November (which is a different season too)
+TEST_PATH = '/content/drive/MyDrive/ILGC-V/parquet/Karnataka/Bangalore_Urban/bangalore_urban_202403_march.parquet'
+
+import pandas as pd
+import numpy as np
+import joblib
+import gc
+
+BAND_COLS = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+
+model = joblib.load('/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib')
+
+# Load only annotated pixels for evaluation
+df = pd.read_parquet(TEST_PATH, columns=BAND_COLS + ['target'])
+df = df[df['target'] != 0].sample(n=200_000, random_state=42)
+
+# Add indices
+eps = 1e-8
+df['BSI']        = ((df['B11']+df['B4'])-(df['B8']+df['B2'])) / ((df['B11']+df['B4'])+(df['B8']+df['B2'])+eps)
+df['NDVI']       = (df['B8']-df['B4'])  / (df['B8'] +df['B4'] +eps)
+df['NDWI']       = (df['B3']-df['B8'])  / (df['B3'] +df['B8'] +eps)
+df['SWIR_ratio'] = df['B11'] / (df['B12']+eps)
+df['brightness'] = (df['B2']+df['B3']+df['B4']+df['B8']) / 4.0
+
+FEATURE_COLS = BAND_COLS + ['BSI','NDVI','NDWI','SWIR_ratio','brightness']
+X_test = df[FEATURE_COLS].values.astype(np.float32)
+y_test = (df['target'] == 2).values.astype(np.int8)
+del df; gc.collect()
+
+from sklearn.metrics import classification_report, roc_auc_score
+y_pred      = model.predict(X_test)
+y_pred_prob = model.predict_proba(X_test)[:, 1]
+
+print("ΓöÇΓöÇ Cross-district Test (Amritsar November) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ")
+print(classification_report(y_test, y_pred,
+      target_names=['Crop (0)', 'Bare (1)'], digits=4))
+print(f"ROC-AUC: {roc_auc_score(y_test, y_pred_prob):.4f}")
+
+--- Cell 5 ---
+# Test on a held-out district parquet that was NOT in training
+# Bangalore Urban, Karnataka ΓÇö completely different state, soil type, and climate
+TEST_PATH = '/content/drive/MyDrive/ILGC-V/parquet/Karnataka/Bangalore_Urban/bangalore_urban_202403_march.parquet'
+
+import pandas as pd
+import numpy as np
+import joblib
+import gc
+
+BAND_COLS    = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+FEATURE_COLS = BAND_COLS + ['BSI','NDVI','NDWI','SWIR_ratio','brightness']
+MODEL_PATH   = '/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib'
+
+model = joblib.load(MODEL_PATH)
+print(f'Model loaded Γ£à')
+
+# Load only annotated pixels
+df = pd.read_parquet(TEST_PATH, columns=BAND_COLS + ['target'])
+df = df[df['target'] != 0].sample(n=200_000, random_state=42)
+print(f'Loaded {len(df):,} annotated pixels')
+print(f'Bare (target=2): {(df["target"]==2).sum():,}')
+print(f'Crop (target=1): {(df["target"]==1).sum():,}')
+
+# Compute spectral indices
+eps = 1e-8
+df['BSI']        = ((df['B11']+df['B4'])-(df['B8']+df['B2'])) / \
+                   ((df['B11']+df['B4'])+(df['B8']+df['B2'])+eps)
+df['NDVI']       = (df['B8'] - df['B4']) / (df['B8']  + df['B4']  + eps)
+df['NDWI']       = (df['B3'] - df['B8']) / (df['B3']  + df['B8']  + eps)
+df['SWIR_ratio'] = df['B11'] / (df['B12'] + eps)
+df['brightness'] = (df['B2'] + df['B3'] + df['B4'] + df['B8']) / 4.0
+
+X_test = df[FEATURE_COLS].values.astype(np.float32)
+y_test = (df['target'] == 2).values.astype(np.int8)   # bare=1, crop=0
+del df; gc.collect()
+
+# Predict
+y_pred      = model.predict(X_test)
+y_pred_prob = model.predict_proba(X_test)[:, 1]
+
+# Evaluate
+from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+
+print("\nΓöÇΓöÇ Cross-Region Test (Bangalore Urban, Karnataka, March 2024) ΓöÇΓöÇ")
+print(classification_report(y_test, y_pred,
+      target_names=['Crop (0)', 'Bare (1)'], digits=4))
+
+cm = confusion_matrix(y_test, y_pred)
+print(f'Confusion Matrix:')
+print(f'               Pred Crop   Pred Bare')
+print(f'  True Crop  : {cm[0,0]
+
+--- Cell 6 ---
+import pandas as pd
+import numpy as np
+import joblib
+import gc
+import os
+from glob import glob
+
+# ΓöÇΓöÇ CONFIGURATION ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+MODEL_PATH    = '/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib'
+INPUT_FOLDER  = '/content/drive/MyDrive/ILGC-V/parquet_exports/'  # Folder with your Sentinel-2 data
+OUTPUT_FOLDER = '/content/drive/MyDrive/ILGC-V/parquet_exports_bare/' # Folder to save results
+THRESHOLD     = 0.5  # Probability threshold for bare soil
+
+# Ensure output directory exists
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# ΓöÇΓöÇ 1. LOAD MODEL ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+model = joblib.load(MODEL_PATH)
+print(f'Model loaded Γ£à')
+
+BAND_COLS    = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+FEATURE_COLS = BAND_COLS + ['BSI','NDVI','NDWI','SWIR_ratio','brightness']
+
+# ΓöÇΓöÇ 2. PROCESS FILES ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+parquet_files = glob(os.path.join(INPUT_FOLDER, "*.parquet"))
+
+for file_path in parquet_files:
+    file_name = os.path.basename(file_path)
+    print(f'Processing: {file_name}...')
+
+    # Load the full parquet file (no ground truth needed)
+    df = pd.read_parquet(file_path)
+
+    # Compute spectral indices (Exact logic from training)
+    eps = 1e-8
+    df['BSI']        = ((df['B11']+df['B4'])-(df['B8']+df['B2'])) / \
+                       ((df['B11']+df['B4'])+(df['B8']+df['B2'])+eps)
+    df['NDVI']       = (df['B8'] - df['B4']) / (df['B8']  + df['B4']  + eps)
+    df['NDWI']       = (df['B3'] - df['B8']) / (df['B3']  + df['B8']  + eps)
+    df['SWIR_ratio'] = df['B11'] / (df['B12'] + eps)
+    df['brightness'] = (df['B2'] + df['B3'] + df['B4'] + df['B8']) / 4.0
+
+    # Prepare features for inference
+    X = df[FEATURE_COLS].values.astype(np.float32)
+
+    # Perform predictions
+    # We get probabilities first to allow for thresholding
+    probs = model.predict_proba(X)[:, 1]
+    df['bare_soil_prob'] = probs.astype(np.float32)
+    df['prediction']     = (probs >= THRESHOLD).astype(np.int8) # 
+
+--- Cell 8 ---
+import pandas as pd
+import numpy as np
+import joblib
+import gc
+from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+
+BAND_COLS    = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+FEATURE_COLS = BAND_COLS + ['BSI','NDVI','NDWI','SWIR_ratio','brightness']
+MODEL_PATH   = '/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib'
+
+# ΓöÇΓöÇ Add as many unseen districts as you have ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+# These should be districts NEVER seen during training
+TEST_FILES = {
+    'Bangalore Urban (Karnataka, March)' : '/content/drive/MyDrive/ILGC-V/parquet/Karnataka/Bangalore_Urban/bangalore_urban_202403_march.parquet'    # Add more here Γåô
+    # 'Mysuru (Karnataka, May)'          : '/content/drive/MyDrive/ILGC-V/parquet/Karnataka/Mysuru/mysuru_202405_may.parquet',
+    # 'Jaipur (Rajasthan, May)'          : '/content/drive/MyDrive/ILGC-V/parquet/Rajasthan/Jaipur/jaipur_202405_may.parquet',
+}
+
+model = joblib.load(MODEL_PATH)
+print(f'Model loaded Γ£à\n')
+
+def evaluate(path, label):
+    print(f'ΓöÇΓöÇ {label} ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ')
+
+    # Load ALL annotated pixels ΓÇö no sampling
+    df = pd.read_parquet(path, columns=BAND_COLS + ['target'])
+    df = df[df['target'] != 0].reset_index(drop=True)
+
+    n_bare = (df['target'] == 2).sum()
+    n_crop = (df['target'] == 1).sum()
+    print(f'  Total annotated: {len(df):,}  (bare={n_bare:,}  crop={n_crop:,})')
+
+    if len(df) == 0:
+        print('  No annotated pixels ΓÇö skipping.')
+        return
+
+    # Spectral indices
+    eps = 1e-8
+    df['BSI']        = ((df['B11']+df['B4'])-(df['B8']+df['B2'])) / \
+                       ((df['B11']+df['B4'])+(df['B8']+df['B2'])+eps)
+    df['NDVI']       = (df['B8'] - df['B4'])  / (df['B8']  + df['B4']  + eps)
+    df['NDWI']       = (df['B3'] - df['B8'])  / (df['B3']  + df['B8']  + eps)
+    df['SWIR_ratio'] = df['B11'] / (df['B12'] + eps)
+    df['brightness'] = (df['B2'] + df['B3'] + df['B4'] + df['B8']) / 4.0
+
+    X = df[FEATURE_COLS].values.astype(np.float32)
+ 
+
+--- Cell 9 ---
+import pandas as pd
+import numpy as np
+import pyarrow.parquet as pq
+import joblib
+import rasterio
+from rasterio.transform import from_bounds
+from rasterio.crs import CRS
+import gc
+import psutil
+import os
+
+def ram():
+    return psutil.virtual_memory().available / 1e9
+
+# ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+#  CONFIG  ΓÇö edit these paths before running
+# ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+MODEL_PATH  = '/content/drive/MyDrive/ILGC-V/xgb_bare_soil.joblib'
+IN_PARQUET  = '/content/drive/MyDrive/ILGC-V/parquet/Karnataka/Bangalore_Urban/bangalore_urban_202403_march.parquet'
+OUTPUT_TIFF = '/content/drive/MyDrive/ILGC-V/bangalore_bare_soil_output.tif'
+BAND_COLS   = ['B11','B12','B2','B3','B4','B5','B6','B7','B8','B8A']
+FEAT_COLS   = BAND_COLS + ['BSI','NDVI','NDWI','SWIR_ratio','brightness']
+CHUNK_ROWS  = 500_000   # rows per batch ΓÇö lower if RAM is tight
+THRESHOLD   = 0.5       # bare-soil probability cutoff
+# ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+# ΓöÇΓöÇ 1. Load model ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+model = joblib.load(MODEL_PATH)
+print(f'Γ£à Model loaded | RAM free: {ram():.1f} GB')
+
+# ΓöÇΓöÇ 2. Pass 1 ΓÇö build the raster grid from lon/lat ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+print(f'\nPass 1: reading coordinates... | RAM free: {ram():.1f} GB')
+coords = pd.read_parquet(IN_PARQUET, columns=['longitude', 'latitude'])
+lons = np.round(coords['longitude'].values, 6).astype(np.float32)
+lats = np.round(coords['latitude'].values,  6).astype(np.float32)
+del coords; gc.collect()
+
+unique_lons = np.sort(np.unique(lons))
+unique_lats = np.sort(np.unique(lats))[::-1]          # top row first
+height, width = len(unique_lats), len(unique_lons)
+total_pixels  = len(lons)
+print(f'Grid : {height} rows ├ù {width} cols | {total_pixels:,} pixels | RAM free: {ram():.1f} GB')
+
+lon2col  = {v: i for i, v in enumerate(unique_lons)}
+lat2row  = {v: i for i, v in enumerate(unique_lats)}
+all_cols = np.array([lon2col[v] for v in lons], dtype=np.int
+

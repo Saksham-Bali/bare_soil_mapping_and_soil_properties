@@ -1,11 +1,47 @@
+# OS and IDE files
 .DS_Store
 .ipynb_checkpoints/
+
+# Python cache
 __pycache__/
 *.pyc
 
-# Large data, models, and spatial files
+# Large data and spatial files
 *.tif
 *.parquet
 *.pkl
 *.csv
 
+# Model files
+*.joblib
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# Model/checkpoint directories
+**/catboost_info/
+**/spectral_mae_ckpt_32/
+soil_classification/mae_soil_classification/spectral_mae_ckpt_32.pt.zip
+
+# Large/local image and mask data
+images/
+masks/
+sickle/
+
+# Soil classification data
+soil_classification/aee_glcm_terrain/
+soil_classification/aee/ae_S2_Soil_CSV_PerPolygon-20260830T112041Z-1-001/
+soil_classification/aee/S2_Soil_Texture_Terrain_CSV-20260830T140305Z-1-001.zip
+soil_classification/aee/ae_bare_soil_pixels.parquet
+soil_classification/S2_Soil_CSV_PerPolygon/
+soil_classification/bare_soil_pixels.parquet
+soil_classification/Soil_TypePunjab/
+
+# SOC related data
+soc_related/s2
+soc_related/s2_bare
+soc_related/s2_old
+soc_related/s2_old_oct_bare
+soc_related/s2_old_oct_cleaned
+soc_related/s2_soc_aee_data

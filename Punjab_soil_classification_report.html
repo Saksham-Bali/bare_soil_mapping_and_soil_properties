@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soil Type Mapping — Punjab Agricultural Land | Project Report</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent1: #0f766e;
+      /* teal  */
+      --accent2: #7c3aed;
+      /* purple */
+      --accent3: #ea580c;
+      /* orange */
+      --accent4: #0369a1;
+      /* blue  */
+      --s1: #3b82f6;
+      --s2: #10b981;
+      --s3: #f59e0b;
+      --s4: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f3460 100%);
+      color: white;
+      padding: 56px 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 4px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      color: #93c5fd;
+    }
+
+    header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span {
+      color: #5eead4;
+    }
+
+    header p.subtitle {
+      font-size: 16px;
+      color: #94a3b8;
+      max-width: 680px;
+      margin-bottom: 32px;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .meta-item strong {
+      color: white;
+      display: block;
+      font-size: 14px;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 32px;
+    }
+
+    /* ── Section ─────────────────────────────────────────── */
+    section {
+      margin-bottom: 56px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent1);
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 12px;
+    }
+
+    p {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Metric Cards ────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      transition: transform 0.2s;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .metric-card .val {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .metric-card .lbl {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .metric-card.teal .val {
+      color: var(--accent1);
+    }
+
+    .metric-card.purple .val {
+      color: var(--accent2);
+    }
+
+    .metric-card.orange .val {
+      color: var(--accent3);
+    }
+
+    .metric-card.blue .val {
+      color: var(--accent4);
+    }
+
+    /* ── Pipeline Steps ─────────────────────────────────── */
+    .pipeline {
+      display: flex;
+      gap: 0;
+      margin: 28px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pipe-step {
+      flex: 1;
+      min-width: 130px;
+      text-align: center;
+      position: relative;
+    }
+
+    .pipe-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -10px;
+      top: 22px;
+      font-size: 18px;
+      color: var(--accent1);
+      font-weight: 700;
+      z-index: 2;
+    }
+
+    .pipe-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent1), var(--accent4));
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+    }
+
+    .pipe-step p {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    /* ── Tables ─────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+    }
+
+    thead {
+      background: #f8fafc;
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 11px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: var(--text);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .best-row td {
+      font-weight: 700;
+      background: #f0fdf4 !important;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tag-s1 {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .tag-s2 {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .tag-s3 {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .tag-s4 {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .tag-best {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* ── Progress bars ──────────────────────────────────── */
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .bar-label {
+      min-width: 60px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .bar-track {
+      flex: 1;
+      background: #f1f5f9;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .bar-val {
+      min-width: 50px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── Code block ─────────────────────────────────────── */
+    .code-block {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      overflow-x: auto;
+      margin: 16px 0;
+      line-height: 1.6;
+    }
+
+    .code-block .kw {
+      color: #7c3aed;
+    }
+
+    .code-block .str {
+      color: #10b981;
+    }
+
+    .code-block .cm {
+      color: #475569;
+      font-style: italic;
+    }
+
+    .code-block .num {
+      color: #f59e0b;
+    }
+
+    /* ── Info boxes ─────────────────────────────────────── */
+    .info-box {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      border-left: 4px solid;
+      font-size: 14px;
+    }
+
+    .info-box.teal {
+      background: #f0fdfa;
+      border-color: var(--accent1);
+      color: #134e4a;
+    }
+
+    .info-box.blue {
+      background: #eff6ff;
+      border-color: var(--accent4);
+      color: #1e3a5f;
+    }
+
+    .info-box.amber {
+      background: #fffbeb;
+      border-color: #d97706;
+      color: #78350f;
+    }
+
+    .info-box.purple {
+      background: #f5f3ff;
+      border-color: var(--accent2);
+      color: #3b0764;
+    }
+
+    /* ── Two-col ─────────────────────────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 700px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Status badge ────────────────────────────────────── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-done {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-running {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-green {
+      background: #22c55e;
+    }
+
+    .dot-amber {
+      background: #eab308;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.4
+      }
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 40px 32px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    img {
+      max-width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════ HEADER -->
+  <header>
+    <div class="header-badge">Research Progress Report</div>
+    <h1>Soil Type Mapping of<br><span>Punjab Agricultural Land</span></h1>
+    <p class="subtitle">
+      A machine-learning pipeline for classifying bare agricultural soil into four texture
+      categories (S1–S4) using Sentinel-2 multispectral imagery and Google Earth Engine.
+    </p>
+    <div class="header-meta">
+      <div class="meta-item"><strong>Study Area</strong>Punjab, India (16 districts)</div>
+      <div class="meta-item"><strong>Imagery Period</strong>April 2024 (bare-soil window)</div>
+      <div class="meta-item"><strong>Satellite</strong>Sentinel-2 (10 m)</div>
+      <div class="meta-item"><strong>Report Date</strong>August 2026</div>
+      <div class="meta-item"><strong>Status</strong>
+        <span class="status-badge status-running"><span class="dot dot-amber"></span>Phase 6 — Punjab Inference
+          Running</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ══════════════════════════════════════════════ PIPELINE OVERVIEW -->
+    <section>
+      <div class="section-label">Overview</div>
+      <h2>End-to-End Pipeline</h2>
+      <p>The project is structured as a six-phase pipeline, from manual ground-truth polygon collection through to
+        state-wide soil type prediction across Punjab's entire agricultural extent.</p>
+
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-num">1</div>
+          <p>Polygon<br>Collection</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">2</div>
+          <p>GEE S2<br>Download</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">3</div>
+          <p>Bare Soil<br>Detection</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">4</div>
+          <p>Dataset<br>Creation</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">5</div>
+          <p>Model<br>Training</p>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">6</div>
+          <p>Punjab-wide<br>Inference</p>
+        </div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card teal">
+          <div class="val">35</div>
+          <div class="lbl">Ground-truth polygons</div>
+        </div>
+        <div class="metric-card blue">
+          <div class="val">659K</div>
+          <div class="lbl">S2 pixels downloaded</div>
+        </div>
+        <div class="metric-card orange">
+          <div class="val">107K</div>
+          <div class="lbl">Bare soil pixels</div>
+        </div>
+        <div class="metric-card purple">
+          <div class="val">0.623</div>
+          <div class="lbl">Best model Macro F1</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ PHASE 1 -->
+    <section>
+      <div class="section-label">Phase 1</div>
+      <h2>Ground-Truth Polygon Collection <span class="status-badge status-done"
+          style="font-size:12px;vertical-align:middle;margin-left:8px"><span
+            class="dot dot-green"></span>Complete</span></h2>
+
+      <p>Ground-truth polygons delineating known soil texture zones were manually collected across 16 Punjab districts.
+        Each polygon was labelled with a soil type (S1–S4) based on field knowledge and existing soil maps. The four
+        classes correspond to:</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>Soil Type Definitions</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-s1">S1</span></td>
+                <td>Sandy / light-textured soils</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-s2">S2</span></td>
+                <td>Sandy loam soils</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-s3">S3</span></td>
+                <td>Loam soils</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-s4">S4</span></td>
+                <td>Clay loam / heavy-textured soils</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Polygon Distribution</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>District</th>
+                <th>S1</th>
+                <th>S2</th>
+                <th>S3</th>
+                <th>S4</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Amritsar</td>
+                <td>1</td>
+                <td>1</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Bathinda</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>Firozpur</td>
+                <td>2</td>
+                <td>1</td>
+                <td>—</td>
+                <td>1</td>
+              </tr>
+              <tr>
+                <td>Gurdaspur</td>
+                <td>1</td>
+                <td>2</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Hoshiarpur</td>
+                <td>2</td>
+                <td>—</td>
+                <td>3</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Patiala</td>
+                <td>1</td>
+                <td>1</td>
+                <td>—</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>Rupnagar</td>
+                <td>1</td>
+                <td>1</td>
+                <td>1</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Others (9)</td>
+                <td>—</td>
+                <td>4</td>
+                <td>—</td>
+                <td>7</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box teal">
+        <strong>Tooling:</strong> A custom Python script (<code>data_proc.py</code>) parsed the per-district CSV files
+        and automatically generated a Google Earth Engine JavaScript FeatureCollection (<code>gee_features.js</code>)
+        containing all 35 polygons with their soil type and district labels — ready for direct paste into the GEE Code
+        Editor.
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ PHASE 2 -->
+    <section>
+      <div class="section-label">Phase 2</div>
+      <h2>Sentinel-2 Data Download via GEE <span class="status-badge status-done"
+          style="font-size:12px;vertical-align:middle;margin-left:8px"><span
+            class="dot dot-green"></span>Complete</span></h2>
+
+      <p>Sentinel-2 Level-2A (Surface Reflectance) imagery was acquired for the bare-soil observation window (1 April –
+        1 May 2024), which is the post-Rabi harvest, pre-Kharif sowing period when agricultural fields are maximally
+        exposed.</p>
+
+      <h3>GEE Export Strategy</h3>
+      <p>Rather than a single large export (which consistently timed out), one independent task was submitted per
+        polygon — 35 tasks total. </p>
+      <div class="two-col">
+        <div class="card">
+          <h3>Pre-processing Applied</h3>
+          <ul style="list-style:none;padding:0;">
+            <li style="padding:6px 0;border-bottom:1px solid #f1f5f9">☁️ <strong>QA60 cloud mask</strong> — bits 10
+              &amp; 11</li>
+            <li style="padding:6px 0;border-bottom:1px solid #f1f5f9">🌫️ <strong>SCL shadow mask</strong> — classes 3,
+              8, 9, 10</li>
+            <li style="padding:6px 0;border-bottom:1px solid #f1f5f9">🌾 <strong>ESA WorldCover</strong> — cropland-only
+              mask (class 40)</li>
+            <li style="padding:6px 0">📊 <strong>Temporal median</strong> — across all valid acquisitions</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Export Parameters</h3>
+          <table>
+            <tbody>
+              <tr>
+                <td><strong>Bands exported</strong></td>
+                <td>B2–B8A, B9, B11, B12 (11 bands)</td>
+              </tr>
+              <tr>
+                <td><strong>Spatial resolution</strong></td>
+                <td>10 m</td>
+              </tr>
+              <tr>
+                <td><strong>Cloud threshold</strong></td>
+                <td>&lt; 20% per scene</td>
+              </tr>
+              <tr>
+                <td><strong>Pixels per polygon</strong></td>
+                <td>25,000 (random sample)</td>
+              </tr>
+              <tr>
+                <td><strong>Output format</strong></td>
+                <td>CSV per polygon → Google Drive</td>
+              </tr>
+              <tr>
+                <td><strong>Total tasks</strong></td>
+                <td>35</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        <strong>Why 25,000 pixels per polygon?</strong> After bare-soil filtering, roughly 10–60% of pixels survive
+        (depending on the polygon). Capping at 25,000 ensures each GEE task remains lightweight and reliable while still
+        providing ample training signal — especially for the later SMOTE oversampling step.
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ PHASE 3 -->
+    <section>
+      <div class="section-label">Phase 3</div>
+      <h2>Bare Soil Detection &amp; Dataset Creation <span class="status-badge status-done"
+          style="font-size:12px;vertical-align:middle;margin-left:8px"><span
+            class="dot dot-green"></span>Complete</span></h2>
+
+      <p>The 35 downloaded CSVs were passed through a pre-trained XGBoost bare-soil classifier
+        (<code>xgb_bare_soil.joblib</code>) to retain only pixels where the land is genuinely bare and unoccluded. This
+        is critical: feeding vegetated or mixed pixels into a soil texture model would introduce severe spectral noise.
+      </p>
+
+      <h3>Pixel Retention Summary</h3>
+      <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric-card blue">
+          <div class="val">659,286</div>
+          <div class="lbl">Total pixels input</div>
+        </div>
+        <div class="metric-card teal">
+          <div class="val">107,899</div>
+          <div class="lbl">Bare soil pixels retained</div>
+        </div>
+        <div class="metric-card orange">
+          <div class="val">83.6%</div>
+          <div class="lbl">Dropped (non-bare)</div>
+        </div>
+      </div>
+
+      <h3>Per-Polygon Bare Soil Rate</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Polygon</th>
+              <th>Soil</th>
+              <th>Total px</th>
+              <th>Bare px</th>
+              <th>Bare %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mansa_s4</td>
+              <td><span class="tag tag-s4">S4</span></td>
+              <td>22,431</td>
+              <td>13,722</td>
+              <td>61.2%</td>
+            </tr>
+            <tr>
+              <td>Bathinda_s4</td>
+              <td><span class="tag tag-s4">S4</span></td>
+              <td>21,635</td>
+              <td>12,774</td>
+              <td>59.0%</td>
+            </tr>
+            <tr>
+              <td>Muktsar_s4</td>
+              <td><span class="tag tag-s4">S4</span></td>
+              <td>22,441</td>
+              <td>8,653</td>
+              <td>38.6%</td>
+            </tr>
+            <tr>
+              <td>Firozpur_s4</td>
+              <td><span class="tag tag-s4">S4</span></td>
+              <td>21,135</td>
+              <td>7,821</td>
+              <td>37.0%</td>
+            </tr>
+            <tr>
+              <td>Sangrur_s2</td>
+              <td><span class="tag tag-s2">S2</span></td>
+              <td>22,499</td>
+              <td>7,514</td>
+              <td>33.4%</td>
+            </tr>
+            <tr>
+              <td>Firozpur_s1</td>
+              <td><span class="tag tag-s1">S1</span></td>
+              <td>23,502</td>
+              <td>4,907</td>
+              <td>20.9%</td>
+            </tr>
+            <tr>
+              <td>Amritsar_s1</td>
+              <td><span class="tag tag-s1">S1</span></td>
+              <td>20,083</td>
+              <td>1,646</td>
+              <td>8.2%</td>
+            </tr>
+            <tr>
+              <td>Hoshiarpur_s3 (small)</td>
+              <td><span class="tag tag-s3">S3</span></td>
+              <td>1,532</td>
+              <td>77</td>
+              <td>5.0%</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="text-align:center;color:var(--muted);font-style:italic">… 27 more polygons</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Retained Dataset — Class Distribution</h3>
+      <div class="card">
+        <div class="bar-row">
+          <span class="bar-label"><span class="tag tag-s4">S4</span></span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:54.6%;background:#ef4444"></div>
+          </div>
+          <span class="bar-val">58,885 (54.6%)</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="tag tag-s2">S2</span></span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:26%;background:#10b981"></div>
+          </div>
+          <span class="bar-val">28,027 (26.0%)</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="tag tag-s1">S1</span></span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:16.2%;background:#3b82f6"></div>
+          </div>
+          <span class="bar-val">17,470 (16.2%)</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label"><span class="tag tag-s3">S3</span></span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:3.3%;background:#f59e0b"></div>
+          </div>
+          <span class="bar-val">3,517 (3.3%)</span>
+        </div>
+      </div>
+      <div class="info-box amber">
+        <strong>Class imbalance noted:</strong> S3 (loam) accounts for only 3.3% of bare-soil pixels, likely due to its
+        limited geographic extent within sampled polygons and lower bare-soil probability in April. This imbalance was
+        addressed using SMOTE during model training.
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ PHASE 4-5 -->
+    <section>
+      <div class="section-label">Phases 4 &amp; 5</div>
+      <h2>Feature Engineering &amp; Model Training <span class="status-badge status-done"
+          style="font-size:12px;vertical-align:middle;margin-left:8px"><span
+            class="dot dot-green"></span>Complete</span></h2>
+
+      <h3>Feature Set (15 features)</h3>
+      <div class="two-col">
+        <div class="card">
+          <p style="font-size:13px;font-weight:600;margin-bottom:8px">Raw Spectral Bands (10)</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B2</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B3</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B4</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B5</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B6</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B7</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B8</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B8A</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B11</span>
+            <span
+              style="background:#eff6ff;color:#1e40af;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">B12</span>
+          </div>
+          <p style="font-size:13px;font-weight:600;margin:14px 0 8px">Spectral Indices (5)</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span
+              style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">NDVI</span>
+            <span
+              style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">BSI</span>
+            <span
+              style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">NDWI</span>
+            <span
+              style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">SWIR
+              ratio</span>
+            <span
+              style="background:#f0fdf4;color:#166534;padding:3px 10px;border-radius:6px;font-size:13px;font-weight:500">Brightness</span>
+          </div>
+        </div>
+        <div class="card">
+          <p style="font-size:13px;font-weight:600;margin-bottom:8px">Index Formulae</p>
+          <div class="code-block" style="font-size:12px;padding:14px">
+            <span class="cm"># Bare Soil Index</span>
+            BSI = <span class="str">((B11+B4)-(B8+B2))</span> / <span class="str">((B11+B4)+(B8+B2))</span>
+
+            <span class="cm"># NDVI</span>
+            NDVI = <span class="str">(B8 - B4)</span> / <span class="str">(B8 + B4)</span>
+
+            <span class="cm"># NDWI</span>
+            NDWI = <span class="str">(B3 - B8)</span> / <span class="str">(B3 + B8)</span>
+
+            <span class="cm"># SWIR Ratio</span>
+            SWIR_ratio = B11 / B12
+
+            <span class="cm"># Brightness</span>
+            Brightness = <span class="str">(B2+B3+B4+B8)</span> / <span class="num">4</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Class Imbalance — SMOTE</h3>
+      <p>Synthetic Minority Over-sampling Technique (SMOTE) was applied exclusively to the training set (80% split) to
+        balance all four classes to equal representation before model fitting.</p>
+      <div class="card" style="margin:12px 0">
+        <div style="display:flex;gap:32px;align-items:center;flex-wrap:wrap">
+          <div>
+            <p style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">BEFORE SMOTE</p>
+            <p style="font-size:22px;font-weight:800;color:#ef4444">86,319 samples</p>
+            <p style="font-size:13px;color:var(--muted)">Highly imbalanced (S3 = 3.3%)</p>
+          </div>
+          <div style="font-size:28px;color:var(--accent1)">→</div>
+          <div>
+            <p style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">AFTER SMOTE</p>
+            <p style="font-size:22px;font-weight:800;color:#22c55e">188,432 samples</p>
+            <p style="font-size:13px;color:var(--muted)">Perfectly balanced (47,108 per class)</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Model Comparison Results</h3>
+      <p>Three models were trained and evaluated on the held-out 20% test set (21,580 pixels). The primary metric is
+        <strong>Macro F1</strong>, which gives equal weight to all four classes regardless of their natural frequency.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Macro F1 ↑</th>
+              <th>Weighted F1</th>
+              <th>Overall Acc.</th>
+              <th>OOB Acc.</th>
+              <th>Train Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="best-row">
+              <td>🏆 Random Forest <span class="tag tag-best">BEST</span></td>
+              <td><strong>0.6227</strong></td>
+              <td>0.6568</td>
+              <td>65.3%</td>
+              <td>85.8%</td>
+              <td>130 s</td>
+            </tr>
+            <tr>
+              <td>Extra Trees</td>
+              <td>0.6213</td>
+              <td>0.6554</td>
+              <td>65.1%</td>
+              <td>86.0%</td>
+              <td>32 s</td>
+            </tr>
+            <tr>
+              <td>XGBoost</td>
+              <td>0.5598</td>
+              <td>0.6016</td>
+              <td>59.2%</td>
+              <td>—</td>
+              <td>31 s</td>
+            </tr>
+            <tr>
+              <td>LightGBM</td>
+              <td>0.5688</td>
+              <td>0.6070</td>
+              <td>59.8%</td>
+              <td>—</td>
+              <td>32 s</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Best Model — Per-Class Performance (Random Forest)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Precision</th>
+              <th>Recall</th>
+              <th>F1 Score</th>
+              <th>Support (px)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag tag-s1">S1</span> Sandy</td>
+              <td>0.479</td>
+              <td>0.581</td>
+              <td>0.525</td>
+              <td>3,494</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-s2">S2</span> Sandy Loam</td>
+              <td>0.597</td>
+              <td>0.600</td>
+              <td>0.598</td>
+              <td>5,606</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-s3">S3</span> Loam</td>
+              <td>0.544</td>
+              <td>0.787</td>
+              <td>0.643</td>
+              <td>703</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-s4">S4</span> Clay Loam</td>
+              <td>0.761</td>
+              <td>0.691</td>
+              <td>0.724</td>
+              <td>11,777</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box purple">
+        <strong>Why do boosting models (XGBoost, LightGBM) underperform?</strong> Sentinel-2 spectral bands for adjacent
+        soil types are highly correlated and spectrally similar. Random Forest's independent bagging with balanced class
+        weights handles this covariate structure better than sequential boosting, which tends to over-focus on the
+        dominant class (S4) in early rounds.
+      </div>
+
+      <h3>Feature Importance (Random Forest)</h3>
+      <p>The SWIR ratio (B11/B12) is the single most discriminative feature, confirming that shortwave infrared
+        reflectance patterns are the primary spectral signal distinguishing Punjab soil textures.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Feature</th>
+              <th>Relative Importance</th>
+              <th>Visual</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>SWIR_ratio</td>
+              <td>11.5%</td>
+              <td>
+                <div style="background:#0f766e;height:8px;border-radius:4px;width:100%"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>B11</td>
+              <td>8.4%</td>
+              <td>
+                <div style="background:#0f766e;height:8px;border-radius:4px;width:73%"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>B12</td>
+              <td>7.8%</td>
+              <td>
+                <div style="background:#0f766e;height:8px;border-radius:4px;width:68%"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>B2</td>
+              <td>7.6%</td>
+              <td>
+                <div style="background:#0f766e;height:8px;border-radius:4px;width:66%"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>NDWI</td>
+              <td>7.1%</td>
+              <td>
+                <div style="background:#0f766e;height:8px;border-radius:4px;width:62%"></div>
+              </td>
+            </tr>
+            <tr>
+              <td>6–15</td>
+              <td>B5–B8, NDVI, BSI, brightness…</td>
+              <td>4–6% each</td>
+              <td>
+                <div style="background:#cbd5e1;height:8px;border-radius:4px;width:50%"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box teal">
+        <strong>Model saved as:</strong> <code>soil_type_rf_noB9.joblib</code> — a self-contained bundle including the
+        fitted RandomForest, LabelEncoder, feature column list, class names, and evaluation metrics. Model size: 304 MB
+        (300 fully-grown decision trees).
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ PHASE 6 -->
+    <section>
+      <div class="section-label">Phase 6</div>
+      <h2>Punjab-wide Inference <span class="status-badge status-running"
+          style="font-size:12px;vertical-align:middle;margin-left:8px"><span class="dot dot-amber"></span>In
+          Progress</span></h2>
+
+      <p>The trained two-stage pipeline is now being applied to the entire agricultural land area of Punjab using
+        pre-existing Sentinel-2 April 2024 parquets for all 16 districts.</p>
+
+      <h3>Inference Pipeline (per district)</h3>
+      <div class="card">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;padding:8px 0">
+          <div style="text-align:center;padding:12px 16px;background:#f0fdfa;border-radius:10px;min-width:130px">
+            <div style="font-size:22px;margin-bottom:4px">📦</div>
+            <div style="font-size:12px;font-weight:600">April Parquet</div>
+            <div style="font-size:11px;color:var(--muted)">~24–57M rows/district</div>
+          </div>
+          <div style="color:var(--accent1);font-size:20px;font-weight:700">→</div>
+          <div style="text-align:center;padding:12px 16px;background:#eff6ff;border-radius:10px;min-width:130px">
+            <div style="font-size:22px;margin-bottom:4px">🤖</div>
+            <div style="font-size:12px;font-weight:600">Bare Soil Filter</div>
+            <div style="font-size:11px;color:var(--muted)">XGBoost (threshold 0.5)</div>
+          </div>
+          <div style="color:var(--accent1);font-size:20px;font-weight:700">→</div>
+          <div style="text-align:center;padding:12px 16px;background:#f5f3ff;border-radius:10px;min-width:130px">
+            <div style="font-size:22px;margin-bottom:4px">🌱</div>
+            <div style="font-size:12px;font-weight:600">Soil Classifier</div>
+            <div style="font-size:11px;color:var(--muted)">RandomForest → S1–S4</div>
+          </div>
+          <div style="color:var(--accent1);font-size:20px;font-weight:700">→</div>
+          <div style="text-align:center;padding:12px 16px;background:#fffbeb;border-radius:10px;min-width:130px">
+            <div style="font-size:22px;margin-bottom:4px">💾</div>
+            <div style="font-size:12px;font-weight:600">Output Parquet</div>
+            <div style="font-size:11px;color:var(--muted)">Per-district + combined</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Districts Queued for Inference</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>District</th>
+              <th>Input Rows (approx.)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Amritsar</td>
+              <td>57,056,838</td>
+              <td><span class="status-badge status-running"><span class="dot dot-amber"></span>Processing</span></td>
+            </tr>
+            <tr>
+              <td>Bathinda</td>
+              <td>~40M</td>
+              <td><span style="color:var(--muted);font-size:13px">Queued</span></td>
+            </tr>
+            <tr>
+              <td>Faridkot, Firozpur, Gurdaspur…</td>
+              <td>~25–50M each</td>
+              <td><span style="color:var(--muted);font-size:13px">Queued</span></td>
+            </tr>
+            <tr>
+              <td>Rupnagar</td>
+              <td>24,521,324</td>
+              <td><span style="color:var(--muted);font-size:13px">Queued</span></td>
+            </tr>
+            <tr>
+              <td colspan="3" style="text-align:center;font-style:italic;color:var(--muted)">16 districts total —
+                processed in 500,000-row chunks on Google Colab</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Expected Output</h3>
+      <p>For each district, a parquet file with the following columns is produced:</p>
+      <div class="code-block">
+        <span class="cm"># Output columns per bare-soil pixel:</span>
+        [B2, B3, B4, B5, B6, B7, B8, B8A, B11, B12, <span class="cm"># 10 spectral bands</span>
+        longitude, latitude, <span class="cm"># spatial coordinates</span>
+        bare_soil_prob, <span class="cm"># P(bare) from XGBoost</span>
+        soil_type_pred, <span class="cm"># s1 / s2 / s3 / s4</span>
+        prob_s1, prob_s2, prob_s3, prob_s4] <span class="cm"># class probabilities</span>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ SUMMARY -->
+    <section>
+      <div class="section-label">Summary</div>
+      <h2>Current Status &amp; Next Steps</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Ground-truth polygon collection (35 polygons, 16 districts)</td>
+              <td><span class="status-badge status-done"><span class="dot dot-green"></span>Done</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>GEE S2 download — 35 tasks, 659K pixels, April 2024</td>
+              <td><span class="status-badge status-done"><span class="dot dot-green"></span>Done</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Bare soil filtering — 107,899 pixels retained (16.4%)</td>
+              <td><span class="status-badge status-done"><span class="dot dot-green"></span>Done</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Feature engineering — 15 features (bands + indices)</td>
+              <td><span class="status-badge status-done"><span class="dot dot-green"></span>Done</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Model training — RF best, Macro F1 = 0.6227</td>
+              <td><span class="status-badge status-done"><span class="dot dot-green"></span>Done</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Punjab-wide inference — 16 districts, ~600M rows</td>
+              <td><span class="status-badge status-running"><span class="dot dot-amber"></span>In Progress</span></td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>Spatial mapping — district-level S1–S4 distribution maps</td>
+              <td><span style="color:var(--muted);font-size:13px">Pending</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box amber" style="margin-top:24px">
+        <strong>Limitations &amp; Future Work:</strong> The current model Macro F1 of 0.623 reflects the inherent
+        spectral ambiguity between adjacent soil texture classes in a single-date median composite. Model performance
+        could be improved by (1) incorporating multi-temporal features across the bare-soil window, (2) adding terrain
+        variables (DEM, slope), (3) expanding training polygons for the underrepresented S3 class, and (4) exploring
+        deep learning approaches (e.g. 1D-CNN on spectral profiles).
+      </div>
+    </section>
+
+  </main>
+
+</body>
+
+</html>

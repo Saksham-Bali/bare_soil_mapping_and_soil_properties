@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOC Estimation from Sentinel-2 — Model Results</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      line-height: 1.8;
+      color: #1a1a1a;
+      background: #f7f6f3;
+      padding: 40px 20px 80px;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #d4d0c9;
+      padding: 64px 72px;
+    }
+
+    /* Header block */
+    .report-header {
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+    }
+
+    .report-title {
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 0.01em;
+      line-height: 1.4;
+    }
+
+    .report-meta {
+      font-size: 12.5px;
+      color: #666;
+      margin-top: 6px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.03em;
+    }
+
+    /* Section headings */
+    h2 {
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #2a2a2a;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+      margin: 44px 0 18px;
+    }
+
+    h3 {
+      font-size: 14.5px;
+      font-weight: bold;
+      margin: 26px 0 8px;
+      color: #1a1a1a;
+    }
+
+    p {
+      margin-bottom: 14px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin: 18px 0 28px;
+    }
+
+    thead tr {
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+
+    thead th {
+      padding: 9px 16px;
+      text-align: left;
+      font-weight: normal;
+      font-family: 'Georgia', serif;
+      font-size: 12.5px;
+      letter-spacing: 0.06em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f5f4f1;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #ffffff;
+    }
+
+    tbody td {
+      padding: 9px 16px;
+      border-bottom: 1px solid #e2e0db;
+      vertical-align: top;
+    }
+
+    .best-row {
+      background: #eaf0ea !important;
+      font-weight: bold;
+    }
+
+    .baseline-row {
+      background: #f5f4f1 !important;
+      color: #555;
+      font-style: italic;
+    }
+
+    .num {
+      text-align: right;
+    }
+
+    /* Model label pills */
+    .model-label {
+      display: inline-block;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      background: #e8e4dc;
+      border: 1px solid #ccc;
+      padding: 1px 7px;
+      border-radius: 2px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* Definition list */
+    dl {
+      margin: 10px 0 20px;
+    }
+
+    dt {
+      font-weight: bold;
+      margin-top: 14px;
+      color: #1a1a1a;
+    }
+
+    dd {
+      margin-left: 26px;
+      color: #333;
+      margin-top: 2px;
+    }
+
+    /* Callout */
+    .callout {
+      border-left: 3px solid #999;
+      background: #f5f4f1;
+      padding: 14px 18px;
+      margin: 22px 0;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+
+    .callout.note {
+      border-color: #3a5f8a;
+      background: #f0f4f8;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      background: #f0eeea;
+      border: 1px solid #ddd;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 16px 26px;
+    }
+
+    li {
+      margin-bottom: 7px;
+    }
+
+    /* Horizontal rule between model blocks */
+    .model-divider {
+      border: none;
+      border-top: 1px dashed #ccc;
+      margin: 28px 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 56px;
+      border-top: 1px solid #ccc;
+      padding-top: 14px;
+      font-size: 12px;
+      color: #999;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <div class="report-header">
+      <div class="report-title">
+        Soil Organic Carbon Estimation from Satellite Data<br>
+        Sentinel-2 and AlphaEarth Embeddings — Model Results
+      </div>
+      <div class="report-meta">
+        Study area: Doaba region, Punjab &nbsp;|&nbsp;
+        40 field plots &nbsp;|&nbsp;
+        Imagery: October 2025 &nbsp;|&nbsp;
+      </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <h2>1. Study Overview</h2>
+
+    <p>
+      This report presents the results of two complementary modelling efforts to predict
+      Soil Organic Carbon (SOC) concentration from satellite imagery. The central question
+      is whether freely available satellite data — Sentinel-2 multispectral bands and
+      foundation model embeddings derived from them — can reliably estimate field-measured
+      SOC without laboratory analysis.
+    </p>
+    <p>
+      A baseline plot-level approach was first developed using established soil spectroscopy
+      methods. This was subsequently extended by incorporating bare soil detection and
+      a pixel-level modelling strategy to assess whether additional information can
+      improve predictive accuracy.
+    </p>
+
+
+    <!-- ============================================================ -->
+    <h2>2. Data</h2>
+
+    <dl>
+      <dt>Field plots</dt>
+      <dd>
+        40 agricultural plots in the Doaba region, Punjab. Laboratory SOC measurements were
+        collected in October 2025. SOC concentration ranges from 0.13% to 1.01%, with a
+        mean of 0.54%.
+      </dd>
+
+      <dt>Satellite imagery</dt>
+      <dd>
+        Sentinel-2 Surface Reflectance (10 m resolution), October 2025 monthly median
+        composite. Exported from Google Earth Engine as per-pixel tables covering each
+        plot boundary.
+      </dd>
+
+      <dt>Spectral bands</dt>
+      <dd>
+        12 bands: B1, B2, B3, B4, B5, B6, B7, B8, B8A, B9, B11, B12.
+      </dd>
+
+      <dt>AlphaEarth embeddings</dt>
+      <dd>
+        64-dimensional per-pixel embeddings (A00 to A63) generated by Google's AlphaEarth
+        geospatial foundation model, derived from the same Sentinel-2 imagery.
+      </dd>
+
+      <dt>Bare soil detection</dt>
+      <dd>
+        A separately trained XGBoost classifier assigns a binary bare or non-bare label to
+        each pixel. Across all 40 plots, 19.2% of pixels are classified as bare soil.
+        Used as an additional feature in the extended pixel-level analysis (Section 5).
+      </dd>
+
+      <dt>Pixel count</dt>
+      <dd>
+        1,619 pixels across 40 plots (4 to 112 pixels per plot).
+      </dd>
+    </dl>
+
+
+    <!-- ============================================================ -->
+    <h2>3. Plot-Level Models</h2>
+
+    <p>
+      Both models below treat each plot as a single observation. Pixel-level data is
+      aggregated into one feature vector per plot before training. The target variable
+      is the single laboratory SOC measurement for that plot.
+    </p>
+
+    <h3>Pixel aggregation and outlier removal</h3>
+    <p>
+      Raw per-pixel band values are filtered before aggregation. Pixels falling in the
+      furthest 15% from the plot's spectral centre, as measured by Mahalanobis distance,
+      are discarded. This removes cloud edges, shadow pixels, and other spatial outliers
+      without requiring a cloud mask. The remaining pixels are averaged to produce a single
+      feature vector per plot. For AlphaEarth embeddings, the same Mahalanobis mask
+      computed on the spectral bands is applied to the 64-dimensional embedding vectors
+      before averaging.
+    </p>
+
+    <hr class="model-divider" />
+
+    <h3>Model 1 — Sentinel-2 spectral bands</h3>
+    <p>
+      <strong>Input:</strong> 12 spectral band averages per plot (after Mahalanobis filtering).<br>
+      <strong>Model:</strong> Partial Least Squares Regression (PLSR). The number of latent
+      components is tuned by cross-validation inside the 39 training plots at each LOO fold.<br>
+      <strong>Output:</strong> Predicted SOC percentage.
+    </p>
+
+    <hr class="model-divider" />
+
+    <h3>Model 2 — AlphaEarth embeddings</h3>
+    <p>
+      <strong>Input:</strong> 64-dimensional AlphaEarth embedding vector per plot
+      (after Mahalanobis filtering and averaging).<br>
+      <strong>Model:</strong> ElasticNet regression. The L1 penalty induced automatic
+      feature selection, retaining 6 of the 64 embedding dimensions.<br>
+      <strong>Output:</strong> Predicted SOC percentage.
+    </p>
+
+    <hr class="model-divider" />
+
+    <h3>Validation</h3>
+    <p>
+      Both models are validated by strict Leave-One-Out Cross-Validation (LOO-CV) across
+      all 40 plots. In each fold, all model settings — number of PLSR components or
+      ElasticNet regularisation strength — are tuned by cross-validation on the 39 training
+      plots. The held-out plot has no influence on any decision. This gives 40 independent
+      out-of-sample predictions, one per plot.
+    </p>
+    <p>
+      The accuracy column in the table below reports the fraction of plots for which the
+      absolute prediction error is below a defined agronomic tolerance threshold.
+      The baseline corresponds to predicting the regional mean SOC (0.54%) for every plot.
+    </p>
+
+
+    <!-- ============================================================ -->
+    <h2>4. Plot-Level Results</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th class="num">R2</th>
+          <th class="num">RMSE</th>
+          <th class="num">MAE</th>
+          <th class="num">Accuracy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="best-row">
+          <td>Model 1 &mdash; Sentinel-2 bands (PLSR)</td>
+          <td class="num">0.154</td>
+          <td class="num">0.179%</td>
+          <td class="num">0.146%</td>
+          <td class="num">64%</td>
+        </tr>
+        <tr>
+          <td>Model 2 &mdash; AlphaEarth embeddings (ElasticNet)</td>
+          <td class="num">0.090</td>
+          <td class="num">0.186%</td>
+          <td class="num">0.141%</td>
+          <td class="num">62%</td>
+        </tr>
+        <tr class="baseline-row">
+          <td>Baseline &mdash; regional mean (0.54%)</td>
+          <td class="num">0.000</td>
+          <td class="num">0.200%</td>
+          <td class="num">0.151%</td>
+          <td class="num">57%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      Model 1 (Sentinel-2, PLSR) is the stronger predictor by R2 and RMSE. Both models
+      outperform the regional mean baseline. Model 2 achieves the lowest MAE (0.141%),
+      suggesting the AlphaEarth embedding captures a complementary signal that reduces
+      the average magnitude of individual plot errors, even if the overall explained
+      variance is lower.
+    </div>
+
+
+    <!-- ============================================================ -->
+    <h2>5. Extended Analysis — Pixel-Level Approach</h2>
+
+    <p>
+      As a supplementary investigation, a pixel-level modelling strategy was evaluated to
+      determine whether retaining individual pixel observations rather than collapsing to
+      plot summaries improves predictive performance.
+    </p>
+
+    <h3>Approach</h3>
+    <p>
+      All 1,619 pixels from all 40 plots are used as individual training samples. Each
+      pixel inherits the laboratory SOC measurement of its parent plot as its label.
+      To prevent data leakage, validation remains plot-level: in each LOO fold, all pixels
+      belonging to the held-out plot are excluded from training. The model generates
+      per-pixel SOC predictions for the held-out plot, and the mean of those predictions
+      is taken as the plot-level SOC estimate. This yields 40 independent plot-level
+      predictions, directly comparable to the results above.
+    </p>
+    <p>
+      Four feature combinations were evaluated, each incorporating progressively richer
+      inputs:
+    </p>
+    <ul>
+      <li><strong>A</strong> — 12 Sentinel-2 spectral bands</li>
+      <li><strong>B</strong> — S2 bands + 64 AlphaEarth embedding dimensions (76 features)</li>
+      <li><strong>C</strong> — S2 bands + 5 derived spectral indices (BSI, NDVI, NDWI, SWIR ratio, brightness) + AEE (81
+        features)</li>
+      <li><strong>D</strong> — All of the above + per-pixel bare soil prediction (82 features)</li>
+    </ul>
+    <p>
+      Three model types were assessed per feature set: PLSR (for direct comparison),
+      Ridge Regression, and XGBoost (gradient-boosted trees). XGBoost with inner
+      hyperparameter tuning was the strongest performer.
+    </p>
+
+    <h3>Selected results</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Feature set</th>
+          <th>Model</th>
+          <th class="num">R2 (LOO)</th>
+          <th class="num">RMSE</th>
+          <th class="num">MAE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="best-row">
+          <td>D &mdash; S2 + Indices + AEE + Bare soil</td>
+          <td>XGBoost</td>
+          <td class="num">+0.143</td>
+          <td class="num">0.181%</td>
+          <td class="num">0.143%</td>
+        </tr>
+        <tr>
+          <td>C &mdash; S2 + Indices + AEE</td>
+          <td>XGBoost</td>
+          <td class="num">+0.142</td>
+          <td class="num">0.181%</td>
+          <td class="num">0.143%</td>
+        </tr>
+        <tr>
+          <td>B &mdash; S2 + AEE</td>
+          <td>XGBoost</td>
+          <td class="num">+0.122</td>
+          <td class="num">0.183%</td>
+          <td class="num">0.144%</td>
+        </tr>
+        <tr>
+          <td>A &mdash; S2 bands only</td>
+          <td>Ridge</td>
+          <td class="num">+0.056</td>
+          <td class="num">0.190%</td>
+          <td class="num">0.157%</td>
+        </tr>
+        <tr class="baseline-row">
+          <td colspan="2">Baseline &mdash; regional mean (0.54%)</td>
+          <td class="num">0.000</td>
+          <td class="num">0.200%</td>
+          <td class="num">0.151%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      The pixel-level XGBoost model (feature set D) achieves R2 = 0.143 with RMSE = 0.181%.
+      This is comparable in accuracy to Model 1 from the plot-level analysis (R2 = 0.154,
+      RMSE = 0.179%), but is reached by a different route: retaining spatial heterogeneity
+      within plots rather than summarising it. The two approaches are therefore complementary.
+      PLSR and Ridge perform markedly worse when applied at the pixel level with
+      high-dimensional AEE features, confirming that non-linear methods are better suited
+      to exploiting the embedding dimensions.
+    </div>
+
+
+    <!-- ============================================================ -->
+    <h2>6. Summary and Discussion</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Approach</th>
+          <th>Model</th>
+          <th class="num">R2</th>
+          <th class="num">RMSE</th>
+          <th class="num">MAE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Plot-level (Mahalanobis filter + mean)</td>
+          <td>PLSR on S2 bands</td>
+          <td class="num">0.154</td>
+          <td class="num">0.179%</td>
+          <td class="num">0.146%</td>
+        </tr>
+        <tr>
+          <td>Plot-level (Mahalanobis filter + mean)</td>
+          <td>ElasticNet on AEE</td>
+          <td class="num">0.090</td>
+          <td class="num">0.186%</td>
+          <td class="num">0.141%</td>
+        </tr>
+        <tr>
+          <td>Pixel-level (all pixels, plot-level LOO)</td>
+          <td>XGBoost on S2 + Indices + AEE + Bare</td>
+          <td class="num">0.143</td>
+          <td class="num">0.181%</td>
+          <td class="num">0.143%</td>
+        </tr>
+        <tr class="baseline-row">
+          <td colspan="2">Baseline &mdash; regional mean prediction</td>
+          <td class="num">0.000</td>
+          <td class="num">0.200%</td>
+          <td class="num">0.151%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      All three modelling approaches outperform the regional mean baseline. The PLSR model
+      on Sentinel-2 bands achieves the highest R2, consistent with the long-established
+      utility of visible and shortwave infrared reflectance as proxies for soil organic
+      matter. The AlphaEarth embedding model achieves the lowest average per-plot error
+      (MAE), suggesting that foundation model representations compress information in a way
+      that is particularly effective at reducing large individual prediction errors.
+    </p>
+    <p>
+      The primary constraint across all approaches is the size of the labelled dataset.
+      With 40 plots and one SOC measurement per plot, any LOO fold trains on 39 unique
+      labels. Soil spectroscopy literature consistently reports that reliable PLSR-class
+      models require a minimum of 80 to 150 calibration samples. The results here are
+      therefore best interpreted as demonstrating directional feasibility rather than
+      operational reliability. Expanding the ground-truth dataset to 80 or more plots
+      remains the highest-priority action for improving all three model types.
+    </p>
+    <p>
+      A secondary opportunity lies in restricting model training and inference to
+      pixels where the soil surface is confirmed to be exposed (bare soil fraction
+      currently 19.2% across plots). When vegetation covers the soil, Sentinel-2
+      reflectance primarily encodes canopy properties, not soil chemistry, adding
+      noise to the regression. Stratifying by bare soil classification before modelling
+      is expected to improve the signal-to-noise ratio, particularly for mixed plots.
+    </p>
+
+
+    <div class="footer">
+      Bare Soil Mapping Project &mdash; SOC Estimation Report &mdash; August 2025 &mdash; Internal
+    </div>
+
+  </div>
+</body>
+
+</html>
