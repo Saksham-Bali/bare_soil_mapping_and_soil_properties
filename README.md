@@ -1,12 +1,12 @@
 # Bare Soil Mapping for Precision Agriculture
 
-**Team 18** · Mentor: Prof. Shashank Tamaskar
+Mentor: Prof. Shashank Tamaskar
 
 **Team:**
 | Name | UID | Email |
 |---|---|---|
 | Aarav Luthra | U20230092 | aarav.luthra.ug23@plaksha.edu.in |
-| Harkirat Singh | U20230082 | harkirat.singh.ug23@plaksha.edu.in |
+| Aditya Masutey | U20230094 | aditya.masutey.ug23@plaksha.edu.in |
 | Saksham Bali | U20230061 | saksham.bali.ug23@plaksha.edu.in |
 | Vansh Kohli | U20230165 | vansh.kohli.ug23@plaksha.edu.in |
 
