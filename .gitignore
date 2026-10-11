@@ -27,7 +27,7 @@ soil_classification/mae_soil_classification/spectral_mae_ckpt_32.pt.zip
 # Large/local image and mask data
 images/
 masks/
-sickle/
+sickle_data/
 
 # Soil classification data
 soil_classification/aee_glcm_terrain/
