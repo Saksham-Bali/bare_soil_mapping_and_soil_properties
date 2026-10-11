@@ -1,0 +1,3 @@
+[submodule "sickle_dataset/third_party/SICKLE_official"]
+	path = sickle_dataset/third_party/SICKLE_official
+	url = https://github.com/Depanshu-Sani/SICKLE.git

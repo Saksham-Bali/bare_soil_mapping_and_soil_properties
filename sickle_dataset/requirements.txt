@@ -1,0 +1,14 @@
+# Versions used for the reported results
+numpy>=1.26          # 2.x used in the cloud run
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.3
+xgboost>=3.2         # model pickled with xgboost >= 2 API; 3.2.0 (Mac VM) and 3.4.1 (cloud) give identical predictions
+torch>=2.0           # 2.14 CPU used
+matplotlib>=3.8
+tifffile             # reading SICKLE mask GeoTIFFs from inside the zip
+imagecodecs          # deflate support for tifffile
+# Only needed for the official SICKLE code in third_party (pixel-level checks):
+opencv-python-headless
+albumentations
+torchmetrics
